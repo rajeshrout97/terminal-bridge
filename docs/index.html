@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Bridge — Remote Mac Terminal for AI Agents</title>
+    <meta name="description" content="Model-agnostic remote Mac terminal access for AI agents. Works with Cursor, Claude CLI, Ollama, and any AI tool.">
+    <meta property="og:title" content="Terminal Bridge">
+    <meta property="og:description" content="Control one Mac's terminal from another using any AI tool.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rajeshrout97.github.io/terminal-bridge/">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0b;
+            --surface: #141416;
+            --surface-2: #1c1c20;
+            --border: #2a2a30;
+            --text: #e8e8ed;
+            --text-muted: #8b8b96;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --green: #22c55e;
+            --green-dim: #16a34a;
+            --amber: #f59e0b;
+            --cyan: #06b6d4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 11, 0.8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--accent), var(--cyan));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--surface-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent-light), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Install block */
+        .install-block {
+            margin: 48px auto 0;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+        }
+
+        .install-block code {
+            color: var(--green);
+        }
+
+        .install-block button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .install-block button:hover {
+            color: var(--text);
+        }
+
+        /* Diagram */
+        .diagram {
+            margin: 80px auto 0;
+            max-width: 700px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .diagram .highlight {
+            color: var(--accent-light);
+        }
+
+        .diagram .green {
+            color: var(--green);
+        }
+
+        .diagram .amber {
+            color: var(--amber);
+        }
+
+        /* Features */
+        .features {
+            padding: 120px 0;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-light);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 16px;
+            color: var(--text-muted);
+            max-width: 520px;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+        }
+
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Interfaces */
+        .interfaces {
+            padding: 0 0 120px;
+        }
+
+        .interface-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        .interface-table th {
+            text-align: left;
+            padding: 14px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .interface-table td {
+            padding: 18px 20px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .interface-table tr:hover td {
+            background: var(--surface);
+        }
+
+        .interface-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .interface-desc {
+            color: var(--text-muted);
+        }
+
+        .interface-cmd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            background: var(--surface);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* How it works */
+        .how-it-works {
+            padding: 0 0 120px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .step {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+        }
+
+        .step-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-light);
+            margin-bottom: 16px;
+        }
+
+        .step h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .step code {
+            display: block;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--green);
+            background: var(--bg);
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        /* CTA */
+        .cta {
+            padding: 80px 0 120px;
+            text-align: center;
+        }
+
+        .cta-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 80px 40px;
+        }
+
+        .cta-box h2 {
+            font-size: clamp(28px, 4vw, 40px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+
+        .cta-box p {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+        }
+
+        footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        footer p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        footer .links {
+            display: flex;
+            gap: 24px;
+        }
+
+        footer .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        footer .links a:hover {
+            color: var(--text);
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .diagram { font-size: 11px; padding: 20px; }
+            .interface-table { font-size: 13px; }
+            .interface-cmd { display: none; }
+            footer .container { flex-direction: column; gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <a href="#" class="logo">
+            <div class="logo-icon">TB</div>
+            Terminal Bridge
+        </a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#interfaces">Interfaces</a>
+            <a href="#setup">Setup</a>
+            <a href="https://github.com/rajeshrout97/terminal-bridge" class="btn btn-secondary">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            v0.1.0 — Now on PyPI
+        </div>
+        <h1>
+            Remote Mac terminal<br>
+            for <span class="gradient">any AI agent</span>
+        </h1>
+        <p>
+            One command to install. Works with Cursor, Claude CLI, Ollama, and any tool that speaks HTTP, MCP, or stdio. The AI runs locally; commands execute on the remote Mac.
+        </p>
+        <div class="hero-buttons">
+            <a href="https://pypi.org/project/terminal-bridge/" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 17l6-6-6-6M12 19h8"/></svg>
+                pip install terminal-bridge
+            </a>
+            <a href="https://github.com/rajeshrout97/terminal-bridge" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                View on GitHub
+            </a>
+        </div>
+
+        <div class="install-block">
+            <code>pip install terminal-bridge</code>
+            <button onclick="navigator.clipboard.writeText('pip install terminal-bridge')" title="Copy">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+        </div>
+
+        <div class="diagram"><span class="highlight">LOCAL MAC</span>                              <span class="green">REMOTE MAC</span>
+┌───────────────────────┐              ┌───────────────────────┐
+│                       │              │                       │
+│  <span class="highlight">Cursor / Ollama /</span>    │              │  <span class="green">Terminal Bridge</span>       │
+│  <span class="highlight">Claude CLI / Any AI</span>  │───<span class="amber">Network</span>───▶│  <span class="green">Agent</span>                 │
+│                       │   (WiFi /    │                       │
+│  AI runs HERE         │   Internet)  │  Commands run HERE    │
+│                       │              │                       │
+└───────────────────────┘              └───────────────────────┘</div>
+    </div>
+</section>
+
+<section class="features" id="features">
+    <div class="container">
+        <div class="section-label">Features</div>
+        <h2 class="section-title">Why Terminal Bridge?</h2>
+        <p class="section-desc">
+            Built for developers who want their AI agent to control a remote Mac without SSH tunnels, port forwarding, or config files.
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F916;</div>
+                <h3>Model Agnostic</h3>
+                <p>Works with Cursor, Claude CLI, Ollama, LM Studio, aider, or any tool that speaks HTTP, MCP, or stdio. No vendor lock-in.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <h3>Secure by Default</h3>
+                <p>HMAC-SHA256 challenge-response auth, TLS encryption on all connections, and keys stored in macOS Keychain — never in plaintext.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x26A1;</div>
+                <h3>Zero Config for Cursor</h3>
+                <p>The setup wizard auto-configures Cursor's MCP. Restart Cursor and your agent can immediately control the remote Mac.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F310;</div>
+                <h3>LAN + Internet</h3>
+                <p>Works over WiFi out of the box. Add Tailscale for free global access, or use the built-in relay server.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F504;</div>
+                <h3>Background Service</h3>
+                <p>The remote agent runs as a launchd service — auto-starts on login, survives reboots, zero daily maintenance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4E1;</div>
+                <h3>Six Interfaces</h3>
+                <p>CLI, REST API, Python SDK, MCP server, stdio pipe, and interactive terminal. Use whatever fits your workflow.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="interfaces" id="interfaces">
+    <div class="container">
+        <div class="section-label">Interfaces</div>
+        <h2 class="section-title">Use it your way</h2>
+        <p class="section-desc">Six ways to talk to your remote Mac. Pick the one that fits.</p>
+        <table class="interface-table">
+            <thead>
+                <tr>
+                    <th>Interface</th>
+                    <th>Best For</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="interface-name">CLI</td>
+                    <td class="interface-desc">Shell scripts, quick commands</td>
+                    <td><span class="interface-cmd">tbridge exec "ls -la"</span></td>
+                </tr>
+                <tr>
+                    <td class="interface-name">REST API</td>
+                    <td class="interface-desc">Ollama, LM Studio, HTTP clients</td>
+                    <td><span class="interface-cmd">POST localhost:9876/api/exec</span></td>
+                </tr>
+                <tr>
+                    <td class="interface-name">Python SDK</td>
+                    <td class="interface-desc">Custom automation scripts</td>
+                    <td><span class="interface-cmd">from terminal_bridge import RemoteTerminal</span></td>
+                </tr>
+                <tr>
+                    <td class="interface-name">MCP Server</td>
+                    <td class="interface-desc">Cursor IDE agent</td>
+                    <td><span class="interface-cmd">Auto-configured</span></td>
+                </tr>
+                <tr>
+                    <td class="interface-name">Stdio Pipe</td>
+                    <td class="interface-desc">Claude CLI, aider</td>
+                    <td><span class="interface-cmd">echo '{"tool":"exec",...}' | tbridge pipe</span></td>
+                </tr>
+                <tr>
+                    <td class="interface-name">Virtual Terminal</td>
+                    <td class="interface-desc">Interactive SSH-like access</td>
+                    <td><span class="interface-cmd">tbridge connect --terminal</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="how-it-works" id="setup">
+    <div class="container">
+        <div class="section-label">Setup</div>
+        <h2 class="section-title">Three commands to get started</h2>
+        <p class="section-desc">Install on both Macs, run the setup wizards, done.</p>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">01</div>
+                <h3>Install</h3>
+                <p>Install Terminal Bridge on both Macs using pip or pipx.</p>
+                <code>pip install terminal-bridge</code>
+            </div>
+            <div class="step">
+                <div class="step-number">02</div>
+                <h3>Setup remote</h3>
+                <p>On the Mac you want to control, run the setup wizard. It generates a pairing code.</p>
+                <code>tbridge setup remote</code>
+            </div>
+            <div class="step">
+                <div class="step-number">03</div>
+                <h3>Pair locally</h3>
+                <p>On the Mac where your AI runs, paste the code. Cursor MCP is auto-configured.</p>
+                <code>tbridge setup local &lt;CODE&gt;</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <div class="container">
+        <div class="cta-box">
+            <h2>Ready to bridge your Macs?</h2>
+            <p>Install in 30 seconds. Free and open source.</p>
+            <div class="hero-buttons">
+                <a href="https://pypi.org/project/terminal-bridge/" class="btn btn-primary">
+                    Install from PyPI
+                </a>
+                <a href="https://github.com/rajeshrout97/terminal-bridge" class="btn btn-secondary">
+                    Read the docs
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>Terminal Bridge &mdash; MIT License &mdash; Built by <a href="https://github.com/rajeshrout97" style="color: var(--accent-light); text-decoration: none;">Rajesh Rout</a></p>
+        <div class="links">
+            <a href="https://github.com/rajeshrout97/terminal-bridge">GitHub</a>
+            <a href="https://pypi.org/project/terminal-bridge/">PyPI</a>
+            <a href="https://github.com/rajeshrout97/terminal-bridge/issues">Issues</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
