@@ -275,6 +275,16 @@ def api(remote: str | None, port: int) -> None:
     asyncio.run(run_rest_api(remote=remote, port=port))
 
 
+# ---------------------------------------------------------------------------
+# Enterprise admin commands
+# ---------------------------------------------------------------------------
+try:
+    from terminal_bridge.enterprise.cli import admin
+    main.add_command(admin)
+except ImportError:
+    pass
+
+
 if __name__ == "__main__":
     main()
 

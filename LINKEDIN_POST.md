@@ -2,7 +2,7 @@
 
 ---
 
-I have two Macs on my desk.
+I built Terminal Bridge — an open-source tool that lets any AI agent control a remote Mac's terminal over the network.
 
 One runs my AI tools — Cursor, Claude CLI, Ollama. The other is where I actually need commands to run — builds, installs, deploys.
 
